@@ -27,8 +27,8 @@ secrets:
   role: ${SECRETROLE}
 
 values:
-  repo_URL: https://code.europa.eu/simpl/simpl-open/development/agents/common_components.git
-  branch: v2.4.2
+  repo_URL: https://github.com/TatuE/so-cc.git
+  branch: main
 
 openbao_init:
   projectID: "1347"

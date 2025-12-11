@@ -78,9 +78,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://code.europa.eu/api/v4/projects/951/packages/helm/stable'
-    path: '""'
-    targetRevision: 2.4.2                           # version of package
+    repoURL: 'https://github.com/TatuE/so-cc.git'
+    path: '.'
+    targetRevision: main                          # version of package
     helm:
       values: |
         values:
