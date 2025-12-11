@@ -1,5 +1,5 @@
 injector:
-  replicas: 2
+  replicas: 1
   enabled: true
   leaderElector:
     enabled: true
