@@ -167,6 +167,7 @@ spec:
         elasticsearch:
           diskSpace: {{ .Values.monitoring.params.diskSpace.elasticsearch }}
           count: {{ .Values.monitoring.params.count.elasticsearch }}
+          storageClass: nfs-client
           {{- if eq .Values.resourcePreset "low" }}
           resources:
             requests:
@@ -180,6 +181,7 @@ spec:
         logstash:
           diskSpace: {{ .Values.monitoring.params.diskSpace.logstash }}
           count_beats: {{ .Values.monitoring.params.count.logstash }}
+          storageClass: nfs-client
           {{- if eq .Values.resourcePreset "low" }}
           resources:
             requests:
