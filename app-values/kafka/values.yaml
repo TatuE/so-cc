@@ -1,0 +1,8 @@
+kafka:
+  replicas: 3
+  topic: 
+    replicas: 2
+    insyncreplicas: 1
+
+kraftController:
+  replicas: 3

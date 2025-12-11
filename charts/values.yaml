@@ -1,0 +1,234 @@
+argocd:
+  appname: ${NAMESPACE}
+  namespace: ${ARGOCDNAMESPACE}
+
+project: ${PROJECT}
+
+resourcePreset: default
+# resourcePreset: low
+
+agentList:
+  authorities: []
+  consumers: []
+  providers: []
+
+cluster:
+  address: https://kubernetes.default.svc
+  namespace: ${NAMESPACE}
+  issuer: ${CERT_ISSUER}
+  kubeStateHost: ${KUBEMETRICSSVC}
+  internalIssuer: ${CERT_INTERNAL_ISSUER}
+
+namespaceTag: ${NAMESPACETAG}
+domainSuffix: ${DOMAINSUFFIX}
+
+secrets:
+  secretEngine: ${SECRETENGINE}
+  role: ${SECRETROLE}
+
+values:
+  repo_URL: https://code.europa.eu/simpl/simpl-open/development/agents/common_components.git
+  branch: v2.4.2
+
+openbao_init:
+  projectID: "1347"
+  targetRevision: 1.0.0
+  chart_name: openbao-init
+
+openbao_config:
+  projectID: "1258"
+  targetRevision: 1.1.2
+  chart_name: openbao-config
+
+openbao:
+  repo_URL: 'https://openbao.github.io/openbao-helm'
+  targetRevision: 0.19.1
+  chart_name: openbao
+  valueFiles:
+    - values.yaml
+  resources:
+    requests:
+      cpu: "0"
+      memory: "0"
+
+monitoring:
+  enabled: true
+  operator:
+    repo_URL: https://helm.elastic.co/
+    chart_name: eck-operator
+    crds_chart_name: eck-operator-crds
+    targetRevision: "3.0.0"
+    nameOverride: eck-operator
+    valueFiles:
+      - values.yaml
+  projectID: "828"
+  targetRevision: 0.2.0
+  chart_name: eck-monitoring
+  fullnameOverride: elastic
+  resources:
+    elasticsearch:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+    kibana:
+      requests:
+        memory: "500Mi"
+        cpu: "500m"
+    metricbeat:
+      requests:
+        memory: "100Mi"
+        cpu: "100m"
+    filebeat:
+      requests:
+        memory: "100Mi"
+        cpu: "100m"
+    logstash:
+      requests:
+        memory: "200Mi"
+        cpu: "200m"
+  params:
+    diskSpace: 
+      elasticsearch: 50Gi
+      logstash: 3Gi
+    count:
+      elasticsearch: 3
+      kibana: 2
+      logstash: 1
+
+vault_webhook:
+  repo_URL: ghcr.io/bank-vaults/helm-charts
+  targetRevision: 1.22.1
+  chart_name: vault-secrets-webhook
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+confluent_operator:
+  repo_URL: https://packages.confluent.io/helm
+  chart_name: confluent-for-kubernetes
+  targetRevision: 0.1351.24
+  nameOverride: confluent-operator
+
+kafka:
+  ha: true
+  projectID: "976"
+  targetRevision: 1.2.0
+  chart_name: kafka
+  auth: 
+    enabled: true
+  topic:
+    autocreate: false
+  resources:
+    kafka:
+      requests:
+        cpu: 400m
+        memory: 400Mi
+      limits:
+        cpu: 2
+        memory: 4Gi
+    kraftController:
+      requests:
+        cpu: 400m
+        memory: 400Mi
+      limits:
+        cpu: 2
+        memory: 4Gi
+  valueFiles:
+    - values.yaml
+
+redpanda:
+  repo_URL: https://charts.redpanda.com
+  chart_name: console
+  targetRevision: 3.2.0
+  nameOverride: redpanda
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  valueFiles:
+    - values.yaml
+
+pg_operator:
+  repo_URL: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+  chart_name: postgres-operator
+  targetRevision: 1.14.0
+  nameOverride: pg-operator
+  valueFiles:
+    - values.yaml
+
+pg_admin:
+  enabled: true
+  repo_URL: https://helm.runix.net
+  chart_name: pgadmin4
+  targetRevision: 1.50.0
+  nameOverride: pg-admin
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  valueFiles:
+    - values.yaml
+
+pg_cluster:
+  projectID: "1024"
+  targetRevision: 1.0.1
+  chart_name: pg-cluster
+  volumeSize: 30Gi
+  resources:
+    requests:
+      cpu: 400m
+      memory: 400Mi
+    limits:
+      cpu: 500m
+      memory: 500Mi
+  valueFiles:
+    - values.yaml
+
+notification:
+  projectID: "1002"
+  targetRevision: 2.1.0
+  nameOverride: simpl-notification
+  chart_name: simpl-notification-service
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  valueFiles:
+    - values.yaml
+
+mailpit:
+  enabled: true
+  repo_URL: 'https://jouve.github.io/charts/'
+  targetRevision: 0.23.1
+  chart_name: mailpit
+  nameOverride: mailpit
+  valueFiles:
+    - values.yaml
+
+infrastructure_consumption_monitoring_service:
+  projectID: "1240"
+  targetRevision: 2.0.1
+  nameOverride: infrastructure-consumption-monitoring-service
+  chart_name: infrastructure-consumption-monitoring-service
+  resources:
+    requests:
+      memory: "300Mi"
+      cpu: "150m"
+    limits:
+      memory: "700Mi"
+      cpu: "300m"
+  valueFiles:
+    - values.yaml

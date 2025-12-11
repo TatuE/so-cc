@@ -1,0 +1,10 @@
+name: pg-cluster
+
+volumeSize: 5Gi
+instances: 3
+
+authorityList: {}
+
+consumerList: {}
+
+providerList: {}

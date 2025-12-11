@@ -1,0 +1,510 @@
+{{- $authorities := .Values.agentList.authorities | default (list) }}
+{{- $providers := .Values.agentList.providers | default (list) }}
+{{- $consumers := .Values.agentList.consumers | default (list) }}
+{{- $namespace := .Values.cluster.namespace | default "" }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "{{ .Values.cluster.namespace }}-vswh"
+{{- range .Values.agentList.authorities }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+{{- end }}
+
+{{- range .Values.agentList.consumers }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+{{- end }}
+
+{{- range .Values.agentList.providers }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+{{- end }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.argocd.appname }}
+  namespace: {{ .Values.argocd.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+
+spec:
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - ServerSideApply=true
+  ignoreDifferences:
+    - kind: Secret
+      name: logstash-writer-secret
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: user-monitoring-secret
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: pg-admin-secret
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: redpanda-secret
+      jsonPointers:
+        - /data
+    {{- range .Values.agentList.authorities }}
+    - kind: Secret
+      name: redis-secrets
+      namespace: {{ . }}
+      jsonPointers:
+        - /data
+    {{- end }}
+    {{- range .Values.agentList.consumers }}
+    - kind: Secret
+      name: redis-secrets
+      namespace: {{ . }}
+      jsonPointers:
+        - /data
+    {{- end }}
+    {{- range .Values.agentList.providers }}
+    - kind: Secret
+      name: redis-secrets
+      namespace: {{ . }}
+      jsonPointers:
+        - /data
+    {{- end }}
+    - kind: Secret
+      name: mailpit-secrets
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: kafka-users-secret
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: keycloak-secrets
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: gitea-secrets
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: ejbca-secret
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: schema-manager-secret
+      jsonPointers:
+        - /data
+  project: {{ .Values.project }}
+  destination:
+    server: {{ .Values.cluster.address }}
+    namespace: {{ .Values.cluster.namespace }}
+  sources:
+  - repoURL: {{ .Values.values.repo_URL }}
+    targetRevision: {{ .Values.values.branch }}
+    ref: values
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.openbao_config.projectID }}/packages/helm/stable"
+    targetRevision: {{ .Values.openbao_config.targetRevision }}
+    chart: {{ .Values.openbao_config.chart_name }}
+    helm:
+      values: |
+        cluster:
+          namespace: {{ .Values.cluster.namespace }}
+        namespaceTag: {{ .Values.namespaceTag }}
+        domainSuffix: {{ .Values.domainSuffix }}
+        secrets:
+          secretEngine: {{ .Values.secrets.secretEngine }}
+          role: {{ .Values.secrets.role }}
+        agentList:
+          {{- toYaml .Values.agentList | nindent 10 }}
+  {{- if .Values.monitoring.enabled }}
+  - repoURL: {{ .Values.monitoring.operator.repo_URL }}
+    targetRevision: {{ .Values.monitoring.operator.targetRevision }}
+    chart: {{ .Values.monitoring.operator.crds_chart_name }}
+  - repoURL: {{ .Values.monitoring.operator.repo_URL }}
+    targetRevision: {{ .Values.monitoring.operator.targetRevision }}
+    chart: {{ .Values.monitoring.operator.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.monitoring.operator.valueFiles }}
+        - $values/app-values/monitoring-operator/{{ . }}
+        {{- end }}
+      values: |
+        fullnameOverride: {{ .Values.monitoring.operator.nameOverride }}-{{ .Values.cluster.namespace }}
+        managedNamespaces: [{{ join "," (concat .Values.agentList.authorities .Values.agentList.providers .Values.agentList.consumers (list .Values.cluster.namespace)) }}]
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.monitoring.projectID }}/packages/helm/stable"
+    path: ''
+    targetRevision: {{ .Values.monitoring.targetRevision }}
+    chart: {{ .Values.monitoring.chart_name }}
+    helm:
+      releaseName: {{ .Values.monitoring.fullnameOverride }}
+      valueFiles:
+        {{- range .Values.monitoring.valueFiles }}
+        - $values/app-values/monitoring/{{ . }}
+        {{- end }}
+      values: |
+        agentType: common
+        clusterIssuer: {{ .Values.cluster.issuer }}
+        clusterIssuer_internal: {{ .Values.cluster.internalIssuer }}
+        domainSuffix: {{ .Values.domainSuffix }}
+        namespaceTag: {{ .Values.namespaceTag }}
+        mainNamespace: {{ .Values.namespaceTag }}
+        metricbeat:
+          kubeStateHost: {{ .Values.cluster.kubeStateHost }}
+        elasticsearch:
+          diskSpace: {{ .Values.monitoring.params.diskSpace.elasticsearch }}
+          count: {{ .Values.monitoring.params.count.elasticsearch }}
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.monitoring.resources.elasticsearch }}
+          resources: {{- toYaml .Values.monitoring.resources.elasticsearch | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        logstash:
+          diskSpace: {{ .Values.monitoring.params.diskSpace.logstash }}
+          count_beats: {{ .Values.monitoring.params.count.logstash }}
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.monitoring.resources.logstash }}
+          resources: {{- toYaml .Values.monitoring.resources.logstash | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        kibana:
+          count: {{ .Values.monitoring.params.count.kibana }}
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.monitoring.resources.kibana }}
+          resources: {{- toYaml .Values.monitoring.resources.kibana | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        filebeat:
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.monitoring.resources.filebeat }}
+          resources: {{- toYaml .Values.monitoring.resources.filebeat | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        metricbeat:
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.monitoring.resources.metricbeat }}
+          resources: {{- toYaml .Values.monitoring.resources.metricbeat | nindent 12 }}
+            {{- end }}
+          {{- end }}
+  {{- end }}
+  - repoURL: {{ .Values.confluent_operator.repo_URL }}
+    targetRevision: {{ .Values.confluent_operator.targetRevision }}
+    chart: {{ .Values.confluent_operator.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.confluent_operator.valueFiles }}
+        - $values/app-values/confluent-operator/{{ . }}
+        {{- end }}
+      values: |
+        fullnameOverride: {{ .Values.confluent_operator.nameOverride }}
+        name: confluent-operator-{{ .Values.cluster.namespace }}
+        kRaftEnabled: true
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.kafka.projectID }}/packages/helm/stable"
+    path: ''
+    targetRevision: {{ .Values.kafka.targetRevision }}
+    chart: {{ .Values.kafka.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.kafka.valueFiles }}
+        - $values/app-values/kafka/{{ . }}
+        {{- end }}
+      values: |
+        clusterIssuer: {{ .Values.cluster.issuer }}
+        kafka:
+          auth:
+            enabled: {{ .Values.kafka.auth.enabled }}
+          topic:
+            autocreate: {{ .Values.kafka.topic.autocreate }}
+          {{- if eq .Values.kafka.ha false }}
+          replicas: 1
+          topic: 
+            replicas: 1
+          {{- end }}
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.kafka.resources.kafka }}
+          resources: {{- toYaml .Values.kafka.resources.kafka | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        kraftController:
+          {{- if eq .Values.kafka.ha false }}
+          replicas: 1
+          {{- end }}
+          {{- if eq .Values.resourcePreset "low" }}
+          resources:
+            requests:
+              cpu: "0"
+              memory: "0"
+          {{- else }}
+            {{- if .Values.kafka.resources.kraftController }}
+          resources: {{- toYaml .Values.kafka.resources.kraftController | nindent 12 }}
+            {{- end }}
+          {{- end }}
+        hashicorp:
+          service: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+          role: {{ .Values.secrets.role }}
+          secretEngine: {{ .Values.secrets.secretEngine }}
+  - repoURL: {{ .Values.redpanda.repo_URL }}
+    targetRevision: {{ .Values.redpanda.targetRevision }}
+    chart: {{ .Values.redpanda.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.redpanda.valueFiles }}
+        - $values/app-values/redpanda/{{ . }}
+        {{- end }}
+      values: |
+        automountServiceAccountToken: true
+        extraEnv:
+          {{- if .Values.kafka.auth.enabled }}
+          - name: KAFKA_SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: kafka-users-secret
+                key: redpanda
+          {{- end }}
+        podAnnotations:
+          vault.security.banzaicloud.io/vault-addr: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+          vault.security.banzaicloud.io/vault-role: {{ .Values.secrets.role }}
+        fullnameOverride: {{ .Values.redpanda.nameOverride }}
+        config:
+          kafka:
+            brokers:
+              - kafka.{{ .Values.cluster.namespace }}.svc.cluster.local:9092
+            {{- if .Values.kafka.auth.enabled }}
+            sasl:
+              enabled: true
+              username: redpanda
+              mechanism: PLAIN
+            {{- end }}
+        ingress:
+          hosts:
+            - host: redpanda.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls:
+            - secretName: redpanda-tls
+              hosts:
+                - redpanda.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+          annotations:
+            cert-manager.io/cluster-issuer: {{ .Values.cluster.issuer }}
+            vault.security.banzaicloud.io/vault-addr: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+            vault.security.banzaicloud.io/vault-role: {{ .Values.secrets.role }}
+        {{- if eq .Values.resourcePreset "low" }}
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+        {{- else }}
+          {{- if .Values.redpanda.resources }}
+        resources: {{- toYaml .Values.redpanda.resources | nindent 10 }}
+          {{- end }}
+        {{- end }}
+  - repoURL: {{ .Values.pg_operator.repo_URL }}
+    targetRevision: {{ .Values.pg_operator.targetRevision }}
+    chart: {{ .Values.pg_operator.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.pg_operator.valueFiles }}
+        - $values/app-values/pg-operator/{{ . }}
+        {{- end }}
+      values: |
+        fullnameOverride: {{ .Values.pg_operator.nameOverride }}-{{ .Values.cluster.namespace }}
+        configKubernetes:
+          watched_namespace: {{ .Values.cluster.namespace }}
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.pg_cluster.projectID }}/packages/helm/stable"
+    path: ''
+    targetRevision: {{ .Values.pg_cluster.targetRevision }}
+    chart: {{ .Values.pg_cluster.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.pg_cluster.valueFiles }}
+        - $values/app-values/pg-cluster/{{ . }}
+        {{- end }}
+      values: |
+        authorityList: {{ .Values.agentList.authorities }}
+        consumerList: {{ .Values.agentList.consumers }}
+        providerList: {{ .Values.agentList.providers }}
+        volumeSize: {{ .Values.pg_cluster.volumeSize }}
+        {{- if eq .Values.resourcePreset "low" }}
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+        {{- else }}
+          {{- if .Values.pg_cluster.resources }}
+        resources: {{- toYaml .Values.pg_cluster.resources | nindent 10 }}
+          {{- end }}
+        {{- end }}
+  {{- if .Values.pg_admin.enabled }}
+  - repoURL: {{ .Values.pg_admin.repo_URL }}
+    targetRevision: {{ .Values.pg_admin.targetRevision }}
+    chart: {{ .Values.pg_admin.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.pg_admin.valueFiles }}
+        - $values/app-values/pg-admin/{{ . }}
+        {{- end }}
+      values: |
+        fullnameOverride: {{ .Values.pg_admin.nameOverride }}-{{ .Values.cluster.namespace }}
+        env:
+          email: admin@{{ .Values.domainSuffix }}
+        podAnnotations:
+          vault.security.banzaicloud.io/vault-addr: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+          vault.security.banzaicloud.io/vault-role: {{ .Values.secrets.role }}
+        ingress:
+          hosts:
+            - host: pgadmin.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend: 
+                    service:
+                      name: {{ .Values.pg_admin.nameOverride }}-{{ .Values.cluster.namespace }}
+                      port:
+                        number: 80
+          tls:
+            - secretName: pgadmin-tls-{{ .Values.cluster.namespace }}
+              hosts:
+                - pgadmin.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+          annotations:
+            cert-manager.io/cluster-issuer: {{ .Values.cluster.issuer }}
+        {{- if eq .Values.resourcePreset "low" }}
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+        {{- else }}
+          {{- if .Values.pg_admin.resources }}
+        resources: {{- toYaml .Values.pg_admin.resources | nindent 10 }}
+          {{- end }}
+        {{- end }}
+  {{- end }}      
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.notification.projectID }}/packages/helm/stable"
+    targetRevision: {{ .Values.notification.targetRevision }}
+    chart: {{ .Values.notification.chart_name }}
+    helm:
+      releaseName: {{ .Values.notification.nameOverride }}
+      valueFiles:
+        {{- range .Values.notification.valueFiles }}
+        - $values/app-values/notification/{{ . }}
+        {{- end }}
+      values: |
+        deployment:
+          vault:
+            hashicorp:
+              service: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+              secretEngine: {{ .Values.secrets.secretEngine }}
+              role: {{ .Values.secrets.role }}
+              secretConfigPath: "{{ .Values.secrets.secretEngine }}/{{ .Values.cluster.namespace }}-notifications"
+          kafka:
+            bootstrapServer: http://kafka.{{ .Values.cluster.namespace }}.svc.cluster.local:9092
+          otel:
+            endpoint: http://collector.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+        {{- if .Values.mailpit.enabled }}
+          mail:
+            smtpHost: mailpit-{{ .Values.cluster.namespace }}-smtp
+            smtpUser: smtp
+        {{- end }}
+        {{- if eq .Values.resourcePreset "low" }}
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+        {{- else }}
+          {{- if .Values.notification.resources }}
+        resources: {{- toYaml .Values.notification.resources | nindent 10 }}
+          {{- end }}
+        {{- end }}
+  {{- if .Values.mailpit.enabled }}
+  - repoURL: {{ .Values.mailpit.repo_URL }}
+    targetRevision: {{ .Values.mailpit.targetRevision }}
+    chart: {{ .Values.mailpit.chart_name }}
+    helm:
+      valueFiles:
+        {{- range .Values.mailpit.valueFiles }}
+        - $values/app-values/mailpit/{{ . }}
+        {{- end }}
+      values: |
+        fullnameOverride: {{ .Values.mailpit.nameOverride }}-{{ .Values.cluster.namespace }}
+        ingress:
+          enabled: true
+          annotations:
+            cert-manager.io/cluster-issuer: {{ .Values.cluster.issuer }}
+          hostname: mailpit.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+          ingressClassName: nginx
+          tls: true
+  {{- end }}
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.infrastructure_consumption_monitoring_service.projectID }}/packages/helm/stable"
+    targetRevision: {{ .Values.infrastructure_consumption_monitoring_service.targetRevision }}
+    chart: {{ .Values.infrastructure_consumption_monitoring_service.chart_name }}
+    helm:
+      releaseName: {{ .Values.infrastructure_consumption_monitoring_service.nameOverride }}
+      valueFiles:
+        {{- range .Values.infrastructure_consumption_monitoring_service.valueFiles }}
+        - $values/app-values/infrastructure-consumption-monitoring-service/{{ . }}
+        {{- end }}
+      values: |
+        deployment:
+          vault:
+            hashicorp:
+              service: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+              secretEngine: {{ .Values.secrets.secretEngine }}
+              role: {{ .Values.secrets.role }}
+              secretConfigPath: "{{ .Values.secrets.secretEngine }}/{{ .Values.cluster.namespace }}-icms"
+          kafka:
+            bootstrapServer: http://kafka.{{ .Values.cluster.namespace }}.svc.cluster.local:9092
+            otel:
+              endpoint: http://collector.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
+        {{- if eq .Values.resourcePreset "low" }}
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+        {{- else }}
+          {{- if .Values.notification.resources }}
+        resources: {{- toYaml .Values.notification.resources | nindent 10 }}
+          {{- end }}
+        {{- end }}

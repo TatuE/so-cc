@@ -1,0 +1,24 @@
+image:
+  registry: ghcr.io
+
+mailpit:
+  ui:
+    authFile:
+      enabled: true
+      existingSecret:
+        name: mailpit-secrets
+        context: mailpit-secrets
+        key: ui.htpasswd
+  smtp:
+    tls:
+      enabled: false
+    authFile:
+      enabled: true
+      existingSecret:
+        name: mailpit-secrets
+        context: mailpit-secrets
+        key: smtp.htpasswd
+
+service:
+  smtp: 
+    port: 587

@@ -1,0 +1,9 @@
+injector:
+  replicas: 2
+  enabled: true
+  leaderElector:
+    enabled: true
+server:
+  ingress:
+    ingressClassName: nginx
+    enabled: true

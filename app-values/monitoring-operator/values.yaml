@@ -1,0 +1,9 @@
+
+#Since CRDs are global resources, they still need to be installed by an administrator. This can be achieved by:
+# helm install elastic-operator-crds elastic/eck-operator-crds
+installCRDs: false
+createClusterScopedResources: false
+webhook:
+  enabled: false
+config:
+  validateStorageClass: false

@@ -1,0 +1,32 @@
+podAnnotations:
+  vault.security.banzaicloud.io/vault-path: "kubernetes"
+  vault.security.banzaicloud.io/vault-skip-verify: "true"
+serviceAccount:
+  create: true
+  automountServiceAccountToken: true
+ingress:
+  enabled: true
+  ingressClassName: nginx
+existingSecret: pg-admin-secret
+secretKeys:
+  pgadminPasswordKey: password
+serverDefinitions:
+  ## If true, server definitions will be created
+  ##
+  enabled: true
+  ## The resource type to use for deploying server definitions.
+  ## Can either be ConfigMap or Secret
+  resourceType: ConfigMap
+  # If resource type is set to ConfigMap, specify existingConfigmap containing definitions
+  existingConfigmap: ""
+  # If resource type is set to Secret, specify existingSecret containing definitions
+  existingSecret: ""
+  servers:
+    firstServer:
+      Name: "Postgres Cluster"
+      Group: "Servers"
+      Port: 5432
+      Username: "postgres"
+      Host: "pg-cluster"
+      SSLMode: "require"
+      MaintenanceDB: "postgres"
