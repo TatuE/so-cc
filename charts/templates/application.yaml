@@ -108,6 +108,28 @@ spec:
       name: schema-manager-secret
       jsonPointers:
         - /data
+    - group: acid.zalan.do
+      kind: postgresql
+    - group: elasticsearch.k8s.elastic.co
+      kind: Elasticsearch
+    - group: kibana.k8s.elastic.co
+      kind: Kibana
+    - group: logstash.k8s.elastic.co
+      kind: Logstash
+    - group: beat.k8s.elastic.co
+      kind: Beat
+    - group: platform.confluent.io
+      kind: Kafka
+    - group: platform.confluent.io
+      kind: KRaftController
+    - kind: Secret
+      name: redpanda
+      jsonPointers:
+        - /data
+    - kind: Secret
+      name: kafka-users-secret
+      jsonPointers:
+        - /data
   project: {{ .Values.project }}
   destination:
     server: {{ .Values.cluster.address }}
@@ -125,11 +147,16 @@ spec:
           namespace: {{ .Values.cluster.namespace }}
         namespaceTag: {{ .Values.namespaceTag }}
         domainSuffix: {{ .Values.domainSuffix }}
+        kubernetesHost: https://kubernetes.default.svc.cluster.local
         secrets:
           secretEngine: {{ .Values.secrets.secretEngine }}
           role: {{ .Values.secrets.role }}
         agentList:
           {{- toYaml .Values.agentList | nindent 10 }}
+        kubernetesRole:
+          bound_service_account_names: ["*"]
+          bound_service_account_namespaces: [{{ join "," (concat .Values.agentList.authorities .Values.agentList.providers .Values.agentList.consumers (list .Values.cluster.namespace) (list (printf "%s-vswh" .Values.cluster.namespace))) }}]
+          policies: ["example-policy"]
   {{- if .Values.monitoring.enabled }}
   - repoURL: {{ .Values.monitoring.operator.repo_URL }}
     targetRevision: {{ .Values.monitoring.operator.targetRevision }}
@@ -180,6 +207,22 @@ spec:
         logstash:
           diskSpace: {{ .Values.monitoring.params.diskSpace.logstash }}
           count_beats: {{ .Values.monitoring.params.count.logstash }}
+          podTemplate:
+            spec:
+              initContainers:
+              - name: load-objects
+                command:
+                - /usr/bin/bash
+                - -c
+                - |
+                  cd /mnt/ilm/charts/kibana/scripts;
+                  export STACK_VERSION={{ .Values.monitoring.targetRevision }};
+                  export RELEASE_NAME={{ .Values.monitoring.fullnameOverride }};
+                  sed -i "1s/^\xEF\xBB\xBF//" ./load_objects.sh;
+                  sed -i "s/while :/for loop_i in 1 2 3/g" ./load_objects.sh;
+                  sed -i "s|/usr/share/logstash-beats/ilm/|/usr/share/logstash/ilm/logstash-|g" ./load_objects.sh;
+                  chmod +x ./load_objects.sh;
+                  ./load_objects.sh 2>&1 || true
           {{- if eq .Values.resourcePreset "low" }}
           resources:
             requests:
