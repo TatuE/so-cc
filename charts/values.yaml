@@ -4,8 +4,8 @@ argocd:
 
 project: ${PROJECT}
 
-resourcePreset: default
-# resourcePreset: low
+#resourcePreset: default
+resourcePreset: low
 
 agentList:
   authorities: []
