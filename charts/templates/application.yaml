@@ -114,8 +114,6 @@ spec:
       kind: Elasticsearch
     - group: kibana.k8s.elastic.co
       kind: Kibana
-    - group: logstash.k8s.elastic.co
-      kind: Logstash
     - group: beat.k8s.elastic.co
       kind: Beat
     - group: platform.confluent.io
