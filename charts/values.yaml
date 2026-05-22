@@ -77,7 +77,6 @@ monitoring:
   fullnameOverride: elastic
   resources:
     elasticsearch:
-      storageClassName: "local-path"
       requests:
         memory: "1Gi"
         cpu: "500m"
@@ -94,7 +93,6 @@ monitoring:
         memory: "100Mi"
         cpu: "100m"
     logstash:
-      storageClassName: "local-path"
       requests:
         memory: "200Mi"
         cpu: "200m"
@@ -106,6 +104,11 @@ monitoring:
       elasticsearch: 3
       kibana: 2
       logstash: 1
+  extraValues:
+    elasticsearch:
+      storageClassName: "local-path"
+    logstash:
+      storageClassName: "local-path"
 
 vault_webhook:
   enabled: true

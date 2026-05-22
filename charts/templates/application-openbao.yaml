@@ -80,3 +80,20 @@ spec:
         replicas: 1
         {{- end }}
   {{- end }}
+{{- if .Values.openbao_init.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: init-bao-{{ .Values.cluster.namespace }}-pvc
+  namespace: {{ .Values.cluster.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  storageClassName: "nfs"
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+{{- end }}
