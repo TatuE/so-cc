@@ -27,8 +27,8 @@ secrets:
   role: ${SECRETROLE}
 
 values:
-  repo_URL: https://code.europa.eu/simpl/simpl-open/development/agents/common_components.git
-  branch: v3.1.0
+  repo_URL: https://github.com/ForumViriumHelsinki/TFDS_SIMPL-open_common_components.git
+  branch: main
 
 openbao_init:
   enabled: true
