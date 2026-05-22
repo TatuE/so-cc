@@ -465,6 +465,11 @@ spec:
           mail:
             smtpHost: mailpit-{{ .Values.cluster.namespace }}-smtp
             smtpUser: smtp
+        {{- else }}
+          mail:
+            smtpHost: {{ .Values.smtp.host }}
+            smtpUser: {{ .Values.smtp.user }}
+            defaultReceiver: {{ .Values.smtp.defaultReceiver }}
         {{- end }}
         {{- if eq .Values.resourcePreset "low" }}
         resources:

@@ -22,6 +22,11 @@ cluster:
 namespaceTag: ${NAMESPACETAG}
 domainSuffix: ${DOMAINSUFFIX}
 
+smtp:
+  host: "email-smtp.eu-north-1.amazonaws.com"
+  user: "smtp"
+  defaultReceiver: "admin@ds.helsinki.tfds.io"
+
 secrets:
   secretEngine: ${SECRETENGINE}
   role: ${SECRETROLE}
