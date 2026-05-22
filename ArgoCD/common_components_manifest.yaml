@@ -58,11 +58,6 @@ spec:
           defaultReceiver: "admin@ds.helsinki.tfds.io"
         monitoring:          # set this value to true, to enable the monitoring features
           enabled: false
-          extraValues:
-            elasticsearch:
-              storageClassName: "local-path"
-            logstash:
-              storageClassName: "local-path"
   destination:
     # FQDN Fully Qualified Domain Name of your kubernetes cluster
     server: "https://kubernetes.default.svc"

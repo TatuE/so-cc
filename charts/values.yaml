@@ -50,7 +50,7 @@ openbao_config:
 openbao:
   enabled: true
   ha: true
-  repo_URL: 'https://openbao.github.io/openbao-helm'
+  repo_URL: "https://openbao.github.io/openbao-helm"
   targetRevision: 0.27.2
   chart_name: openbao
   replicas: 3
@@ -77,6 +77,7 @@ monitoring:
   fullnameOverride: elastic
   resources:
     elasticsearch:
+      storageClassName: "local-path"
       requests:
         memory: "1Gi"
         cpu: "500m"
@@ -93,11 +94,12 @@ monitoring:
         memory: "100Mi"
         cpu: "100m"
     logstash:
+      storageClassName: "local-path"
       requests:
         memory: "200Mi"
         cpu: "200m"
   params:
-    diskSpace: 
+    diskSpace:
       elasticsearch: 50Gi
       logstash: 3Gi
     count:
@@ -131,7 +133,7 @@ kafka:
   projectID: "976"
   targetRevision: 1.2.2
   chart_name: kafka
-  auth: 
+  auth:
     enabled: true
   topic:
     autocreate: false
@@ -229,7 +231,7 @@ notification:
 
 mailpit:
   enabled: true
-  repo_URL: 'https://jouve.github.io/charts/'
+  repo_URL: "https://jouve.github.io/charts/"
   targetRevision: 0.31.3
   chart_name: mailpit
   nameOverride: mailpit
