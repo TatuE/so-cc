@@ -55,6 +55,9 @@ spec:
         notification:
           extraValues:
             deployment:
+              vault:
+                hashicorp:
+                  service: https://secrets.common.ds.helsinki.tfds.io
               mail:
                 smtpHost: "email-smtp.eu-north-1.amazonaws.com"
                 smtpUser: "smtp"
