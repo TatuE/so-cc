@@ -17,6 +17,7 @@ spec:
       - ApplyOutOfSyncOnly=true
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
   ignoreDifferences:
     - kind: PersistentVolumeClaim
       name: "init-bao-{{ .Values.cluster.namespace }}-pvc"
