@@ -58,6 +58,7 @@ spec:
               vault:
                 hashicorp:
                   service: https://secrets.common.ds.helsinki.tfds.io
+                  role: example-role
               mail:
                 smtpHost: "email-smtp.eu-north-1.amazonaws.com"
                 smtpUser: "smtp"
