@@ -86,8 +86,19 @@ spec:
         replicas: 1
         {{- end }}
   {{- end }}
+
 {{- if .Values.openbao_init.enabled }}
 ---
+# TEMPORARY WORKAROUND:
+# The upstream openbao-init chart currently hard-codes its PVC creation without 
+# exposing a storageClassName variable. This forces it to use the cluster default 
+# (local-path), which fails because it requires ReadWriteMany (RWX).
+# 
+# We pre-create the PVC here with our specific RWX storage class ("nfs"). 
+# Because we create it at sync-wave 0, the upstream chart will simply adopt this 
+# existing PVC instead of trying to create a broken one.
+#
+# TODO: Remove this block once openbao-init is updated upstream to accept storageClassName.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -96,6 +107,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
+  # If you want to make this dynamic, you can map this from values.yaml 
+  # e.g., storageClassName: {{ .Values.openbao_init.storageClassName | quote }}
   storageClassName: "nfs"
   accessModes:
     - ReadWriteMany
