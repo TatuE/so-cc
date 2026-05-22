@@ -17,7 +17,6 @@ spec:
       - ApplyOutOfSyncOnly=true
       - CreateNamespace=true
       - ServerSideApply=true
-      - Replace=true
   project: {{ .Values.project }}
   destination:
     server: {{ .Values.cluster.address }}
@@ -26,6 +25,7 @@ spec:
   - repoURL: {{ .Values.values.repo_URL }}
     targetRevision: {{ .Values.values.branch }}
     ref: values
+  {{- if .Values.openbao.enabled }}
   - repoURL: {{ .Values.openbao.repo_URL }}
     targetRevision: {{ .Values.openbao.targetRevision }}
     chart: {{ .Values.openbao.chart_name }}
@@ -42,10 +42,15 @@ spec:
           affinity: {}
         {{- end }}
         server:
+          ha:
+            {{- if eq .Values.openbao.ha false }}
+            enabled: false
+            replicas: 1
+            {{- else }}
+            replicas: {{ .Values.openbao.replicas }}
+            {{- end }}
           {{- if eq .Values.resourcePreset "low" }}
           affinity: {}
-          dataStorage:
-            enabled: true
           {{- end }}
           ingress:
             annotations:
@@ -56,22 +61,22 @@ spec:
               - secretName: openbao-{{ .Values.namespaceTag }}-tls
                 hosts:
                   - secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
-        {{- if eq .Values.resourcePreset "low" }}
-        resources:
-          requests:
-            cpu: "0"
-            memory: "0"
-        {{- else }}
-          {{- if .Values.openbao.resources }}
+        {{- if .Values.openbao.resources }}
         resources: {{- toYaml .Values.openbao.resources | nindent 10 }}
-          {{- end }}
         {{- end }}
-  - repoURL: {{ .Values.values.repo_URL }}
-    targetRevision: {{ .Values.values.branch }}
-    path: charts/local/openbao-init-v1.0.0/charts
+  {{- end }}
+  {{- if .Values.openbao_init.enabled }}
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.openbao_init.projectID }}/packages/helm/stable"
+    targetRevision: {{ .Values.openbao_init.targetRevision }}
+    chart: {{ .Values.openbao_init.chart_name }}
     helm:
       values: |
         cluster:
           namespace: {{ .Values.cluster.namespace }}
         namespaceTag: {{ .Values.namespaceTag }}
         domainSuffix: {{ .Values.domainSuffix }}
+        replicas: {{ .Values.openbao.replicas }}
+        {{- if eq .Values.openbao.ha false }}
+        replicas: 1
+        {{- end }}
+  {{- end }}

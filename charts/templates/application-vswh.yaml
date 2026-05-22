@@ -1,3 +1,4 @@
+{{- if .Values.vault_webhook.enabled }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -5,8 +6,24 @@ metadata:
   namespace: {{ .Values.argocd.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-
 spec:
+  ignoreDifferences:
+    - group: ""
+      kind: "Secret"
+      name: "vault-webhook-{{ .Values.cluster.namespace }}-webhook-tls"
+      jsonPointers:
+        - /data
+    - group: "admissionregistration.k8s.io"
+      kind: "MutatingWebhookConfiguration"
+      name: "vault-webhook-{{ .Values.cluster.namespace }}"
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+        - /webhooks/1/clientConfig/caBundle
+    - group: "apps"
+      kind: "Deployment"
+      name: "vault-webhook-{{ .Values.cluster.namespace }}"
+      jsonPointers:
+        - /spec/template/metadata/annotations
   syncPolicy:
     automated: {}
     syncOptions:
@@ -47,3 +64,4 @@ spec:
         resources: {{- toYaml .Values.vault_webhook.resources | nindent 10 }}
           {{- end }}
         {{- end }}
+{{- end }}

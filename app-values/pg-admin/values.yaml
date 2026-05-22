@@ -30,3 +30,5 @@ serverDefinitions:
       Host: "pg-cluster"
       SSLMode: "require"
       MaintenanceDB: "postgres"
+image:
+  tag: 9.15

@@ -38,7 +38,6 @@ metadata:
   namespace: {{ .Values.argocd.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "3"
-
 spec:
   syncPolicy:
     automated: {}
@@ -116,9 +115,10 @@ spec:
   - repoURL: {{ .Values.values.repo_URL }}
     targetRevision: {{ .Values.values.branch }}
     ref: values
-  - repoURL: {{ .Values.values.repo_URL }}
-    targetRevision: {{ .Values.values.branch }}
-    path: charts/local/openbao-v1.2.4/charts
+  {{- if .Values.openbao_config.enabled }}
+  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.openbao_config.projectID }}/packages/helm/stable"
+    targetRevision: {{ .Values.openbao_config.targetRevision }}
+    chart: {{ .Values.openbao_config.chart_name }}
     helm:
       values: |
         cluster:
@@ -130,6 +130,7 @@ spec:
           role: {{ .Values.secrets.role }}
         agentList:
           {{- toYaml .Values.agentList | nindent 10 }}
+  {{- end }}
   {{- if .Values.monitoring.enabled }}
   - repoURL: {{ .Values.monitoring.operator.repo_URL }}
     targetRevision: {{ .Values.monitoring.operator.targetRevision }}
@@ -224,7 +225,11 @@ spec:
           resources: {{- toYaml .Values.monitoring.resources.metricbeat | nindent 12 }}
             {{- end }}
           {{- end }}
+        {{- if .Values.monitoring.extraValues }}
+        {{- toYaml .Values.monitoring.extraValues | nindent 8 }}
+        {{- end }}
   {{- end }}
+  {{- if .Values.confluent_operator.enabled }}
   - repoURL: {{ .Values.confluent_operator.repo_URL }}
     targetRevision: {{ .Values.confluent_operator.targetRevision }}
     chart: {{ .Values.confluent_operator.chart_name }}
@@ -237,6 +242,8 @@ spec:
         fullnameOverride: {{ .Values.confluent_operator.nameOverride }}
         name: confluent-operator-{{ .Values.cluster.namespace }}
         kRaftEnabled: true
+  {{- end }}
+  {{- if .Values.kafka.enabled }}
   - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.kafka.projectID }}/packages/helm/stable"
     path: ''
     targetRevision: {{ .Values.kafka.targetRevision }}
@@ -286,6 +293,8 @@ spec:
           service: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
           role: {{ .Values.secrets.role }}
           secretEngine: {{ .Values.secrets.secretEngine }}
+  {{- end }}
+  {{- if .Values.redpanda.enabled }}
   - repoURL: {{ .Values.redpanda.repo_URL }}
     targetRevision: {{ .Values.redpanda.targetRevision }}
     chart: {{ .Values.redpanda.chart_name }}
@@ -342,6 +351,8 @@ spec:
         resources: {{- toYaml .Values.redpanda.resources | nindent 10 }}
           {{- end }}
         {{- end }}
+  {{- end }}
+  {{- if .Values.pg_operator.enabled }}
   - repoURL: {{ .Values.pg_operator.repo_URL }}
     targetRevision: {{ .Values.pg_operator.targetRevision }}
     chart: {{ .Values.pg_operator.chart_name }}
@@ -354,6 +365,8 @@ spec:
         fullnameOverride: {{ .Values.pg_operator.nameOverride }}-{{ .Values.cluster.namespace }}
         configKubernetes:
           watched_namespace: {{ .Values.cluster.namespace }}
+  {{- end }}
+  {{- if .Values.pg_cluster.enabled }}
   - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.pg_cluster.projectID }}/packages/helm/stable"
     path: ''
     targetRevision: {{ .Values.pg_cluster.targetRevision }}
@@ -368,6 +381,9 @@ spec:
         consumerList: {{ toYaml .Values.agentList.consumers | nindent 10 }}
         providerList: {{ toYaml .Values.agentList.providers | nindent 10 }}
         volumeSize: {{ .Values.pg_cluster.volumeSize }}
+        {{- if eq .Values.pg_cluster.ha false }}
+        instances: 1
+        {{- end }}
         {{- if eq .Values.resourcePreset "low" }}
         resources:
           requests:
@@ -378,6 +394,7 @@ spec:
         resources: {{- toYaml .Values.pg_cluster.resources | nindent 10 }}
           {{- end }}
         {{- end }}
+  {{- end }}
   {{- if .Values.pg_admin.enabled }}
   - repoURL: {{ .Values.pg_admin.repo_URL }}
     targetRevision: {{ .Values.pg_admin.targetRevision }}
@@ -422,6 +439,7 @@ spec:
           {{- end }}
         {{- end }}
   {{- end }}
+  {{- if .Values.notification.enabled }}
   - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.notification.projectID }}/packages/helm/stable"
     targetRevision: {{ .Values.notification.targetRevision }}
     chart: {{ .Values.notification.chart_name }}
@@ -443,16 +461,11 @@ spec:
             bootstrapServer: http://kafka.{{ .Values.cluster.namespace }}.svc.cluster.local:9092
           otel:
             endpoint: http://collector.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
-          {{- if .Values.mailpit.enabled }}
+        {{- if .Values.mailpit.enabled }}
           mail:
             smtpHost: mailpit-{{ .Values.cluster.namespace }}-smtp
             smtpUser: smtp
-          {{- else }}
-          mail:
-            smtpHost: {{ .Values.smtp.host }}
-            smtpUser: {{ .Values.smtp.user }}
-            defaultReceiver: {{ .Values.smtp.defaultReceiver }}
-          {{- end }}
+        {{- end }}
         {{- if eq .Values.resourcePreset "low" }}
         resources:
           requests:
@@ -463,6 +476,10 @@ spec:
         resources: {{- toYaml .Values.notification.resources | nindent 10 }}
           {{- end }}
         {{- end }}
+        {{- if .Values.notification.extraValues }}
+        {{- toYaml .Values.notification.extraValues | nindent 8 }}
+        {{- end }}
+  {{- end }}
   {{- if .Values.mailpit.enabled }}
   - repoURL: {{ .Values.mailpit.repo_URL }}
     targetRevision: {{ .Values.mailpit.targetRevision }}
@@ -482,6 +499,7 @@ spec:
           ingressClassName: nginx
           tls: true
   {{- end }}
+  {{- if .Values.infrastructure_consumption_monitoring_service.enabled }}
   - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.infrastructure_consumption_monitoring_service.projectID }}/packages/helm/stable"
     targetRevision: {{ .Values.infrastructure_consumption_monitoring_service.targetRevision }}
     chart: {{ .Values.infrastructure_consumption_monitoring_service.chart_name }}
@@ -513,3 +531,4 @@ spec:
         resources: {{- toYaml .Values.notification.resources | nindent 10 }}
           {{- end }}
         {{- end }}
+  {{- end }}

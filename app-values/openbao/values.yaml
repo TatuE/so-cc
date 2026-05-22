@@ -7,3 +7,9 @@ server:
   ingress:
     ingressClassName: nginx
     enabled: true
+    activeService: false
+  ha:
+    enabled: true
+    raft:
+      enabled: true
+      setNodeId: true
