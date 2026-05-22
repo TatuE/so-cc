@@ -36,7 +36,7 @@ spec:
         {{- end }}
       values: |
         fullnameOverride: openbao-{{ .Release.Namespace }}
-        {{- if eq .Values.resourcePreset "low" }}
+        {{- if eq .Values.openbao.ha false }}
         injector:
           replicas: 1
           affinity: {}
@@ -49,7 +49,7 @@ spec:
             {{- else }}
             replicas: {{ .Values.openbao.replicas }}
             {{- end }}
-          {{- if eq .Values.resourcePreset "low" }}
+          {{- if eq .Values.openbao.ha false }}
           affinity: {}
           {{- end }}
           ingress:

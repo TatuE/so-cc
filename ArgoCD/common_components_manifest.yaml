@@ -38,11 +38,16 @@ spec:
         secrets:
           secretEngine: example                     # name of the kv secret engine that will be created in OpenBao
           role: example-role                        # name of the role that will be created in OpenBao
+        pg_cluster:
+          ha: false                                 # set to false to have one replica of Postgres to save resources
+        openbao:
+          ha: false                                 # set to false to have one replica of OpenBao to save resources
         kafka:
-          ha: false                                  # true creates 3 replicas of each component, false creates 1 of each
+          ha: false                                 # true creates 3 replicas of each component, false creates 1 of each
           topic:
-            # set this value to true, to have kafka creating automatically the required topics
             autocreate: true
+        infrastructure_consumption_monitoring_service:
+          enabled: false                            # Set to false to disable OVH-specific billing scraper
         mailpit:
           # set this value to true, to have mailpit activated (sandbox mode)
           enabled: false
