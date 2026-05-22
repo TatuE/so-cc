@@ -17,6 +17,12 @@ spec:
       - ApplyOutOfSyncOnly=true
       - CreateNamespace=true
       - ServerSideApply=true
+  ignoreDifferences:
+    - kind: PersistentVolumeClaim
+      name: "init-bao-{{ .Values.cluster.namespace }}-pvc"
+      jsonPointers:
+        - /spec/storageClassName
+        - /spec/volumeName
   project: {{ .Values.project }}
   destination:
     server: {{ .Values.cluster.address }}
