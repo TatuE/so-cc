@@ -24,6 +24,7 @@ spec:
       jsonPointers:
         - /spec/storageClassName
         - /spec/volumeName
+        - /spec/accessModes
   project: {{ .Values.project }}
   destination:
     server: {{ .Values.cluster.address }}
@@ -108,11 +109,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
-  # If you want to make this dynamic, you can map this from values.yaml 
-  # e.g., storageClassName: {{ .Values.openbao_init.storageClassName | quote }}
-  storageClassName: "nfs"
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
