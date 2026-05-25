@@ -106,8 +106,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: init-bao-{{ .Values.cluster.namespace }}-pvc
   namespace: {{ .Values.cluster.namespace }}
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
+  # annotations:
+  #   argocd.argoproj.io/sync-wave: "0" # Disabled to prevent local-path binding deadlock
 spec:
   accessModes:
     - ReadWriteOnce
