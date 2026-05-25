@@ -24,7 +24,6 @@ spec:
       jsonPointers:
         - /spec/storageClassName
         - /spec/volumeName
-        - /spec/accessModes
   project: {{ .Values.project }}
   destination:
     server: {{ .Values.cluster.address }}
@@ -106,11 +105,12 @@ kind: PersistentVolumeClaim
 metadata:
   name: init-bao-{{ .Values.cluster.namespace }}-pvc
   namespace: {{ .Values.cluster.namespace }}
-  # annotations:
-  #   argocd.argoproj.io/sync-wave: "0" # Disabled to prevent local-path binding deadlock
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
+  storageClassName: "nfs"
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
