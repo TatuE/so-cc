@@ -1,6 +1,0 @@
-imageTag: 2.5.1
-
-namespaceTag: nstag
-cluster:
-  namespace: ns
-domainSuffix: int.simpl-europe.eu
