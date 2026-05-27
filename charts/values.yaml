@@ -37,11 +37,11 @@ openbao_init:
 
 openbao_config:
   projectID: "1258"
-  targetRevision: 1.2.3
+  targetRevision: 1.3.4
   chart_name: openbao-config
 
 openbao:
-  repo_URL: 'https://openbao.github.io/openbao-helm'
+  repo_URL: "https://openbao.github.io/openbao-helm"
   targetRevision: 0.19.1
   chart_name: openbao
   valueFiles:
@@ -87,7 +87,7 @@ monitoring:
         memory: "200Mi"
         cpu: "200m"
   params:
-    diskSpace: 
+    diskSpace:
       elasticsearch: 50Gi
       logstash: 3Gi
     count:
@@ -118,7 +118,7 @@ kafka:
   projectID: "976"
   targetRevision: 1.2.0
   chart_name: kafka
-  auth: 
+  auth:
     enabled: true
   topic:
     autocreate: false
@@ -181,7 +181,7 @@ pg_admin:
 
 pg_cluster:
   projectID: "1024"
-  targetRevision: 1.1.1
+  targetRevision: 1.2.0
   chart_name: pg-cluster
   volumeSize: 30Gi
   resources:
@@ -211,7 +211,7 @@ notification:
 
 mailpit:
   enabled: true
-  repo_URL: 'https://jouve.github.io/charts/'
+  repo_URL: "https://jouve.github.io/charts/"
   targetRevision: 0.23.1
   chart_name: mailpit
   nameOverride: mailpit
