@@ -373,7 +373,7 @@ spec:
   {{- if .Values.pg_cluster.enabled }}
   - repoURL: {{ .Values.monorepo_URL }}
     targetRevision: {{ .Values.monorepo_branch }}
-    path: charts/{{ .Values.pg_cluster.chart_name }}
+    path: charts/postgres-cluster
     helm:
       valueFiles:
         {{- range .Values.pg_cluster.valueFiles }}
