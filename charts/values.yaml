@@ -26,24 +26,28 @@ secrets:
   secretEngine: ${SECRETENGINE}
   role: ${SECRETROLE}
 
+monorepo_URL: https://github.com/ForumViriumHelsinki/TFDS-SIMPL-open-helm-charts.git
+monorepo_branch: main
+
 values:
   repo_URL: https://github.com/ForumViriumHelsinki/TFDS_SIMPL-open_common_components.git
   branch: main
 
 openbao_init:
-  projectID: "1347"
-  targetRevision: 1.0.0
+  enabled: true
   chart_name: openbao-init
 
 openbao_config:
-  projectID: "1258"
-  targetRevision: 1.3.4
+  enabled: true
   chart_name: openbao-config
 
 openbao:
-  repo_URL: "https://openbao.github.io/openbao-helm"
-  targetRevision: 0.19.1
+  enabled: true
+  ha: true
+  repo_URL: 'https://openbao.github.io/openbao-helm'
+  targetRevision: 0.27.2
   chart_name: openbao
+  replicas: 3
   valueFiles:
     - values.yaml
   resources:
@@ -62,7 +66,7 @@ monitoring:
     valueFiles:
       - values.yaml
   projectID: "828"
-  targetRevision: 0.3.3
+  targetRevision: 0.5.6
   chart_name: eck-monitoring
   fullnameOverride: elastic
   resources:
@@ -87,7 +91,7 @@ monitoring:
         memory: "200Mi"
         cpu: "200m"
   params:
-    diskSpace:
+    diskSpace: 
       elasticsearch: 50Gi
       logstash: 3Gi
     count:
@@ -96,8 +100,9 @@ monitoring:
       logstash: 1
 
 vault_webhook:
+  enabled: true
   repo_URL: ghcr.io/bank-vaults/helm-charts
-  targetRevision: 1.22.1
+  targetRevision: 1.22.2
   chart_name: vault-secrets-webhook
   resources:
     requests:
@@ -108,17 +113,17 @@ vault_webhook:
       memory: "512Mi"
 
 confluent_operator:
+  enabled: true
   repo_URL: https://packages.confluent.io/helm
   chart_name: confluent-for-kubernetes
-  targetRevision: 0.1351.24
+  targetRevision: 0.1514.19
   nameOverride: confluent-operator
 
 kafka:
+  enabled: true
   ha: true
-  projectID: "976"
-  targetRevision: 1.2.0
   chart_name: kafka
-  auth:
+  auth: 
     enabled: true
   topic:
     autocreate: false
@@ -141,6 +146,7 @@ kafka:
     - values.yaml
 
 redpanda:
+  enabled: true
   repo_URL: https://charts.redpanda.com
   chart_name: console
   targetRevision: 3.2.0
@@ -156,9 +162,10 @@ redpanda:
     - values.yaml
 
 pg_operator:
+  enabled: true
   repo_URL: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
   chart_name: postgres-operator
-  targetRevision: 1.14.0
+  targetRevision: 1.15.1
   nameOverride: pg-operator
   valueFiles:
     - values.yaml
@@ -167,7 +174,7 @@ pg_admin:
   enabled: true
   repo_URL: https://helm.runix.net
   chart_name: pgadmin4
-  targetRevision: 1.50.0
+  targetRevision: 1.62.0
   nameOverride: pg-admin
   resources:
     requests:
@@ -180,8 +187,8 @@ pg_admin:
     - values.yaml
 
 pg_cluster:
-  projectID: "1024"
-  targetRevision: 1.2.0
+  enabled: true
+  ha: true
   chart_name: pg-cluster
   volumeSize: 30Gi
   resources:
@@ -195,8 +202,7 @@ pg_cluster:
     - values.yaml
 
 notification:
-  projectID: "1002"
-  targetRevision: 2.1.1
+  enabled: true
   nameOverride: simpl-notification
   chart_name: simpl-notification-service
   resources:
@@ -211,12 +217,13 @@ notification:
 
 mailpit:
   enabled: true
-  repo_URL: "https://jouve.github.io/charts/"
-  targetRevision: 0.23.1
+  repo_URL: 'https://jouve.github.io/charts/'
+  targetRevision: 0.31.3
   chart_name: mailpit
   nameOverride: mailpit
   valueFiles:
     - values.yaml
+
 
 smtp:
   host: "smtp.ionos.de"
@@ -224,8 +231,7 @@ smtp:
   defaultReceiver: "simpl_tech@simpl-europe.eu"
 
 infrastructure_consumption_monitoring_service:
-  projectID: "1240"
-  targetRevision: 2.3.1
+  enabled: true
   nameOverride: infrastructure-consumption-monitoring-service
   chart_name: infrastructure-consumption-monitoring-service
   resources:

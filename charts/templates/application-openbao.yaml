@@ -1,8 +1,14 @@
-
 apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .Values.cluster.namespace }}
+
+{{- /* Define HA overrides based on Resource Preset */ -}}
+{{- $openbaoHA := .Values.openbao.ha }}
+
+{{- if eq .Values.resourcePreset "low" }}
+{{- $openbaoHA = false }}
+{{- end }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -26,6 +32,7 @@ spec:
   - repoURL: {{ .Values.values.repo_URL }}
     targetRevision: {{ .Values.values.branch }}
     ref: values
+  {{- if .Values.openbao.enabled }}
   - repoURL: {{ .Values.openbao.repo_URL }}
     targetRevision: {{ .Values.openbao.targetRevision }}
     chart: {{ .Values.openbao.chart_name }}
@@ -36,17 +43,21 @@ spec:
         {{- end }}
       values: |
         fullnameOverride: openbao-{{ .Release.Namespace }}
-        {{- if eq .Values.resourcePreset "low" }}
         injector:
+          {{- if eq $openbaoHA false }}
           replicas: 1
           affinity: {}
-        {{- end }}
-        server:
-          {{- if eq .Values.resourcePreset "low" }}
-          affinity: {}
-          dataStorage:
-            enabled: true
+          {{- else }}
+          replicas: {{ .Values.openbao.replicas }}
           {{- end }}
+        server:
+          ha:
+            {{- if eq $openbaoHA false }}
+            enabled: false
+            replicas: 1
+            {{- else }}
+            replicas: {{ .Values.openbao.replicas }}
+            {{- end }}
           ingress:
             annotations:
               cert-manager.io/cluster-issuer: {{ .Values.cluster.issuer }}
@@ -56,22 +67,22 @@ spec:
               - secretName: openbao-{{ .Values.namespaceTag }}-tls
                 hosts:
                   - secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
-        {{- if eq .Values.resourcePreset "low" }}
-        resources:
-          requests:
-            cpu: "0"
-            memory: "0"
-        {{- else }}
-          {{- if .Values.openbao.resources }}
+        {{- if .Values.openbao.resources }}
         resources: {{- toYaml .Values.openbao.resources | nindent 10 }}
-          {{- end }}
         {{- end }}
-  - repoURL: "https://code.europa.eu/api/v4/projects/{{ .Values.openbao_init.projectID }}/packages/helm/stable"
-    targetRevision: {{ .Values.openbao_init.targetRevision }}
-    chart: {{ .Values.openbao_init.chart_name }}
+  {{- end }}
+  {{- if .Values.openbao_init.enabled }}
+  - repoURL: {{ .Values.monorepo_URL }}
+    targetRevision: {{ .Values.monorepo_branch }}
+    path: charts/{{ .Values.openbao_init.chart_name }}
     helm:
       values: |
         cluster:
           namespace: {{ .Values.cluster.namespace }}
         namespaceTag: {{ .Values.namespaceTag }}
         domainSuffix: {{ .Values.domainSuffix }}
+        replicas: {{ .Values.openbao.replicas }}
+        {{- if eq $openbaoHA false }}
+        replicas: 1
+        {{- end }}
+  {{- end }}

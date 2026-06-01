@@ -1,3 +1,3 @@
 name: common_components
-version: 3.0.1
+version: ${PROJECT_RELEASE_VERSION}
 
