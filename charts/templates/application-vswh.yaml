@@ -47,6 +47,9 @@ spec:
         - $values/app-values/vault-webhook/{{ . }}
         {{- end }}
       values: |
+        mutatingWebhookConfiguration:
+          annotations:
+            cert-manager.io/inject-ca-from: "{{ .Values.cluster.namespace }}-vswh/vault-webhook-{{ .Values.cluster.namespace }}-webhook-tls"
         watchNamespace: {{ .Values.cluster.namespace }}
         fullnameOverride: vault-webhook-{{ .Values.cluster.namespace }}
         serviceAccount:
