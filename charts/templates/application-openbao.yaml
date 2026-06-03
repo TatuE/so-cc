@@ -48,6 +48,7 @@ spec:
             enabled: true
           {{- end }}
           ingress:
+            ingressClassName: nginx
             annotations:
               cert-manager.io/cluster-issuer: {{ .Values.cluster.issuer }}
             hosts:
