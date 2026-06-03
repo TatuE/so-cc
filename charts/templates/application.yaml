@@ -395,6 +395,7 @@ spec:
           vault.security.banzaicloud.io/vault-addr: https://secrets.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
           vault.security.banzaicloud.io/vault-role: {{ .Values.secrets.role }}
         ingress:
+          ingressClassName: nginx
           hosts:
             - host: pgadmin.{{ .Values.namespaceTag }}.{{ .Values.domainSuffix }}
               paths:
